@@ -220,7 +220,7 @@
     </div>
 
     <script>
-        // CONFIGURACIÓN CON TUS CLAVES INTEGRADAS
+        // CONFIGURACIÓN DE APIS
         const BIN_ID = '6a7df98af5f4af5e2912133f'; 
         const SECRET_KEY = '$2a$10$RZtMj57NceGwO.OxoJHqRO8YPx7e9wiK/9lEZmSfyQbXingxfqamO';
         const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
@@ -266,7 +266,7 @@
             }
         }
 
-        // GUARDAR DATOS EN LA NUBE
+        // GUARDAR DATOS EN LA NUBE (CORREGIDO)
         async function guardarEnNube() {
             indicarEstadoSync("⏳ Guardando...", "#fff3cd", "#856404");
             try {
@@ -274,7 +274,8 @@
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-Master-Key': SECRET_KEY
+                        'X-Master-Key': SECRET_KEY,
+                        'X-Bin-Versioning': 'false'
                     },
                     body: JSON.stringify(datosBase)
                 });
