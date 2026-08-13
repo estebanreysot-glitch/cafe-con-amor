@@ -94,7 +94,7 @@
 
     <div id="app-content">
         <header class="top-navbar">
-            <h1>Gestión de Inventario <span class="sync-status" id="sync-status">☁️ Sincronizado</span></h1>
+            <h1>Gestión de Inventario <span class="sync-status" id="sync-status">✅ Sistema Listo</span></h1>
 
             <div class="profile-container">
                 <button class="profile-btn" onclick="toggleProfileDropdown()">
@@ -214,11 +214,9 @@
     </div>
 
     <script>
-        // Limpiar restos de la configuración antigua de JSONBin
+        // Limpieza de datos antiguos
         localStorage.removeItem('cfg_bin_id');
         localStorage.removeItem('cfg_api_key');
-
-        const NPOINT_URL = 'https://api.npoint.io/469956fbc8a614d9b23f';
 
         let datosBase = {
             perfil: { nombre: "Administrador", usuario: "admin", pass: "1234" },
@@ -228,14 +226,17 @@
             productos: []
         };
 
-        const localBackup = localStorage.getItem('inventario_local_backup');
-        if (localBackup) {
-            try { datosBase = JSON.parse(localBackup); } catch(e){}
+        const localData = localStorage.getItem('inventario_datos');
+        const legacyData = localStorage.getItem('inventario_local_backup');
+
+        if (localData) {
+            try { datosBase = JSON.parse(localData); } catch(e){}
+        } else if (legacyData) {
+            try { datosBase = JSON.parse(legacyData); } catch(e){}
         }
 
-        const syncStatusEl = document.getElementById('sync-status');
-
-        function indicarEstadoSync(mensaje, colorFondo, colorTexto) {
+        function indicarEstado(mensaje, colorFondo, colorTexto) {
+            const syncStatusEl = document.getElementById('sync-status');
             if (syncStatusEl) {
                 syncStatusEl.textContent = mensaje;
                 syncStatusEl.style.background = colorFondo;
@@ -243,50 +244,15 @@
             }
         }
 
-        function guardarLocal() {
-            localStorage.setItem('inventario_local_backup', JSON.stringify(datosBase));
+        function guardarDatos() {
+            localStorage.setItem('inventario_datos', JSON.stringify(datosBase));
+            indicarEstado("✅ Guardado Correcto", "#e8f5e9", "#28a745");
         }
 
-        async function cargarDesdeNube() {
-            indicarEstadoSync("⏳ Cargando...", "#fff3cd", "#856404");
-            try {
-                const res = await fetch(NPOINT_URL);
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data && (data.perfil || data.productos)) {
-                        datosBase = data;
-                        guardarLocal();
-                        indicarEstadoSync("☁️ Sincronizado", "#e8f5e9", "#28a745");
-                    } else {
-                        indicarEstadoSync("☁️ Sincronizado", "#e8f5e9", "#28a745");
-                    }
-                } else {
-                    indicarEstadoSync("☁️ Sincronizado", "#e8f5e9", "#28a745");
-                }
-            } catch (err) {
-                indicarEstadoSync("☁️ Sincronizado", "#e8f5e9", "#28a745");
-            }
+        function cargarDatos() {
             actualizarUIPerfil();
             renderizarTablaYFinanzas();
-        }
-
-        async function guardarEnNube() {
-            guardarLocal();
-            indicarEstadoSync("⏳ Guardando...", "#fff3cd", "#856404");
-            try {
-                const res = await fetch(NPOINT_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(datosBase)
-                });
-                if (res.ok) {
-                    indicarEstadoSync("☁️ Sincronizado", "#e8f5e9", "#28a745");
-                } else {
-                    indicarEstadoSync("☁️ Sincronizado", "#e8f5e9", "#28a745");
-                }
-            } catch (err) {
-                indicarEstadoSync("☁️ Sincronizado", "#e8f5e9", "#28a745");
-            }
+            indicarEstado("✅ Sistema Listo", "#e8f5e9", "#28a745");
         }
 
         function actualizarUIPerfil() {
@@ -348,7 +314,7 @@
             };
             datosBase.productos.push(nuevo);
             renderizarTablaYFinanzas();
-            guardarEnNube();
+            guardarDatos();
             this.reset();
         });
 
@@ -357,7 +323,7 @@
             const monto = parseFloat(document.getElementById('monto-proveedor').value);
             datosBase.proveedores = (datosBase.proveedores || 0) + monto;
             renderizarTablaYFinanzas();
-            guardarEnNube();
+            guardarDatos();
             this.reset();
         });
 
@@ -366,7 +332,7 @@
             if (isNaN(val) || val <= 0) return alert("Ingresa una cantidad válida.");
             datosBase.productos[i].stock += val;
             renderizarTablaYFinanzas();
-            guardarEnNube();
+            guardarDatos();
         }
 
         function restarStock(i) {
@@ -381,14 +347,14 @@
             datosBase.ganancias = (datosBase.ganancias || 0) + ((prod.precio - prod.costo) * val);
 
             renderizarTablaYFinanzas();
-            guardarEnNube();
+            guardarDatos();
         }
 
         function eliminarProducto(i) {
             if (confirm("¿Eliminar este producto del inventario?")) {
                 datosBase.productos.splice(i, 1);
                 renderizarTablaYFinanzas();
-                guardarEnNube();
+                guardarDatos();
             }
         }
 
@@ -399,7 +365,7 @@
                 datosBase.unidadesVendidas = 0;
                 datosBase.productos = [];
                 renderizarTablaYFinanzas();
-                guardarEnNube();
+                guardarDatos();
             }
         }
 
@@ -412,7 +378,7 @@
             if (n) {
                 datosBase.perfil.nombre = n;
                 actualizarUIPerfil();
-                guardarEnNube();
+                guardarDatos();
                 alert("Nombre actualizado.");
             }
         }
@@ -422,7 +388,7 @@
             const nue = document.getElementById('pass-nueva').value.trim();
             if (act === datosBase.perfil.pass && nue) {
                 datosBase.perfil.pass = nue;
-                guardarEnNube();
+                guardarDatos();
                 alert("Contraseña actualizada con éxito.");
                 document.getElementById('pass-actual').value = '';
                 document.getElementById('pass-nueva').value = '';
@@ -453,7 +419,7 @@
         function mostrarApp() {
             document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('app-content').style.display = 'block';
-            cargarDesdeNube();
+            cargarDatos();
         }
 
         function cerrarSesion() {
