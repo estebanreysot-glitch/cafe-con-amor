@@ -220,8 +220,8 @@
     </div>
 
     <script>
-        // CONFIGURACIÓN DE APIS
-        const BIN_ID = '6a7df98af5f4af5e2912133f'; 
+        // CONFIGURACIÓN DE APIS (ACTUALIZADO CON TU NUEVO BIN ID)
+        const BIN_ID = '6a7e00fff5f4af5e291231e6'; 
         const SECRET_KEY = '$2a$10$RZtMj57NceGwO.OxoJHqRO8YPx7e9wiK/9lEZmSfyQbXingxfqamO';
         const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
@@ -256,9 +256,6 @@
                     const data = await res.json();
                     if (data.record && data.record.perfil) {
                         datosBase = data.record;
-                    } else {
-                        // Si el Bin está vacío o tiene formato básico, lo inicializamos con los datos por defecto
-                        await guardarEnNube();
                     }
                     indicarEstadoSync("☁️ Sincronizado", "#e8f5e9", "#28a745");
                     actualizarUIPerfil();
