@@ -215,6 +215,7 @@
 
     <script>
         const BIN_ID = '6a7e00fff5f4af5e291231e6'; 
+        const API_KEY = '$2a$10$RZtMj57NCeGwO.OxoJHqRO8YPx7e9wIk/9lEZmSfyQbXingxfqamO';
         const API_URL = 'https://api.jsonbin.io/v3/b/' + BIN_ID;
 
         let datosBase = {
@@ -241,6 +242,7 @@
                 const res = await fetch(API_URL + '/latest', {
                     method: 'GET',
                     headers: {
+                        'X-Master-Key': API_KEY,
                         'X-Bin-Meta': 'false'
                     }
                 });
@@ -256,7 +258,7 @@
                     actualizarUIPerfil();
                     renderizarTablaYFinanzas();
                 } else {
-                    indicarEstadoSync("⚠️ Error de conexión (" + res.status + ")", "#f8d7da", "#721c24");
+                    indicarEstadoSync("⚠️ Error de conexión", "#f8d7da", "#721c24");
                 }
             } catch (err) {
                 console.error(err);
@@ -270,14 +272,15 @@
                 const res = await fetch(API_URL, {
                     method: 'PUT',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': API_KEY
                     },
                     body: JSON.stringify(datosBase)
                 });
                 if (res.ok) {
                     indicarEstadoSync("☁️ Sincronizado", "#e8f5e9", "#28a745");
                 } else {
-                    indicarEstadoSync("⚠️ Error al guardar (" + res.status + ")", "#f8d7da", "#721c24");
+                    indicarEstadoSync("⚠️ Error al guardar", "#f8d7da", "#721c24");
                 }
             } catch (err) {
                 console.error(err);
