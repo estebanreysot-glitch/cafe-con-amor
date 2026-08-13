@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Inventario de Productos</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f6f9;
+            color: #333;
+        }
+
+        /* ESTILOS DE LA PANTALLA DE LOGIN */
+        #login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #1a202c;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .login-card {
+            background: white;
+            padding: 30px 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 350px;
+            text-align: center;
+        }
+        .login-card h2 {
+            margin-top: 0;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        .login-card .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        .login-card label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .login-card input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .btn-login {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .btn-login:hover {
+            background-color: #0056b3;
+        }
+        .error-msg {
+            color: #dc3545;
+            font-size: 13px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        /* ESTRUCTURA PRINCIPAL */
+        #app-content {
+            display: none;
+        }
+
+        /* BARRA SUPERIOR (HEADER) */
+        .top-navbar {
+            background-color: #ffffff;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+            position: relative;
+        }
+        .top-navbar h1 {
+            margin: 0;
+            font-size: 22px;
+            color: #2c3e50;
+        }
+
+        /* MENÚ DE PERFIL */
+        .profile-container {
+            position: relative;
+        }
+        .profile-btn {
+            background-color: #f8f9fa;
+            border: 1px solid #ced4da;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            color: #495057;
+            transition: all 0.2s;
+        }
+        .profile-btn:hover {
+            background-color: #e9ecef;
+        }
+        .avatar-circle {
+            width: 30px;
+            height: 30px;
+            background-color: #007bff;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        /* MENÚ DESPLEGABLE */
+        .profile-dropdown {
+            position: absolute;
+            top: 50px;
+            right: 0;
+            width: 320px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            border: 1px solid #e9ecef;
+            display: none;
+            z-index: 1000;
+            padding: 20px;
+        }
+        .profile-dropdown.active {
+            display: block;
+        }
+        .dropdown-header {
+            border-bottom: 1px solid #eeeeee;
+            padding-bottom: 12px;
+            margin-bottom: 15px;
+        }
+        .dropdown-header h3 {
+            margin: 0;
+            font-size: 16px;
+            color: #2c3e50;
+        }
+        .dropdown-header p {
+            margin: 4px 0 0 0;
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+        .profile-section {
+            margin-bottom: 15px;
+        }
+        .profile-section label {
+            font-size: 12px;
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 4px;
+            display: block;
+        }
+        .profile-section input {
+            width: 100%;
+            padding: 7px 10px;
+            font-size: 13px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+        }
+
+        .btn-profile-action {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        .btn-profile-action:hover {
+            background-color: #0056b3;
+        }
+
+        .divider {
+            height: 1px;
+            background-color: #e9ecef;
+            margin: 15px 0;
+        }
+
+        .btn-danger-soft {
+            background-color: #fff5f5;
+            color: #dc3545;
+            border: 1px solid #feb2b2;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+        }
+        .btn-danger-soft:hover {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-logout {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .btn-logout:hover {
+            background-color: #495057;
+        }
+
+        /* CONTENIDO PRINCIPAL DE LA APP */
+        .main-container {
+            max-width: 1100px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        /* TARJETAS FINANCIERAS */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: white;
+            padding: 18px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            border-left: 5px solid #007bff;
+        }
+        .card.inversion { border-left-color: #17a2b8; }
+        .card.vendidos { border-left-color: #6f42c1; }
+        .card.ganancia { border-left-color: #28a745; }
+        .card.proveedores { border-left-color: #ffc107; }
+        .card h3 {
+            margin: 0 0 8px 0;
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .card .amount {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        /* FORMULARIOS */
+        .grid-formularios {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .form-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+        .form-container h2 {
+            margin-top: 0;
+            font-size: 16px;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+        }
+        .form-group {
+            margin-bottom: 10px;
+        }
+        label { 
+            display: block; 
+            margin-bottom: 5px; 
+            font-weight: 600; 
+            font-size: 12px;
+            color: #495057;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .btn-guardar {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .btn-guardar:hover { background-color: #218838; }
+        .btn-proveedor {
+            background-color: #ffc107;
+            color: #212529;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .btn-proveedor:hover { background-color: #e0a800; }
+
+        /* TABLA DE PRODUCTOS */
+        .table-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+            vertical-align: middle;
+            font-size: 14px;
+        }
+        th { 
+            background-color: #f8f9fa; 
+            color: #495057; 
+            font-weight: 600;
+        }
+        .input-cantidad-movimiento {
+            width: 55px;
+            padding: 5px;
+            margin-right: 5px;
+            display: inline-block;
+        }
+        .input-edit {
+            width: 100%;
+            padding: 5px;
+        }
+        .btn-sumar {
+            background-color: #17a2b8;
+            color: white;
+            padding: 5px 8px;
+            font-size: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-descontar {
+            background-color: #ffc107;
+            color: #212529;
+            padding: 5px 8px;
+            font-size: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-editar {
+            background-color: #6c757d;
+            color: white;
+            padding: 5px 8px;
+            font-size: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn-eliminar {
+            background-color: #dc3545;
+            color: white;
+            padding: 5px 8px;
+            font-size: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .badge-vendidos {
+            background-color: #e9ecef;
+            color: #495057;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PANTALLA DE AUTENTICACIÓN -->
+    <div id="login-overlay">
+        <div class="login-card">
+            <h2>Acceso al Sistema</h2>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="login-usuario">Usuario:</label>
+                    <input type="text" id="login-usuario" required placeholder="Ingresa tu usuario">
+                </div>
+                <div class="form-group">
+                    <label for="login-pass">Contraseña:</label>
+                    <input type="password" id="login-pass" required placeholder="Ingresa tu contraseña">
+                </div>
+                <button type="submit" class="btn-login">Iniciar Sesión</button>
+                <div id="login-error" class="error-msg">Usuario o contraseña incorrectos</div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CONTENIDO DEL INVENTARIO -->
+    <div id="app-content">
+
+        <!-- NAVEGACIÓN SUPERIOR CON PERFIL -->
+        <header class="top-navbar">
+            <h1>Gestión de Inventario</h1>
+
+            <div class="profile-container">
+                <button class="profile-btn" onclick="toggleProfileDropdown()">
+                    <div class="avatar-circle" id="avatar-initial">A</div>
+                    <span id="display-user-name">Administrador</span>
+                    <small>▼</small>
+                </button>
+
+                <!-- Pestaña desplegable de Perfil -->
+                <div class="profile-dropdown" id="profile-dropdown">
+                    <div class="dropdown-header">
+                        <h3 id="dropdown-name">Administrador</h3>
+                        <p id="dropdown-user-login">Usuario: admin</p>
+                    </div>
+
+                    <!-- Cambiar Nombre -->
+                    <div class="profile-section">
+                        <label for="profile-name-input">Nombre completo:</label>
+                        <input type="text" id="profile-name-input" placeholder="Tu nombre">
+                        <button class="btn-profile-action" onclick="guardarNombrePerfil()">Guardar Nombre</button>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <!-- Cambio de Contraseña -->
+                    <div class="profile-section">
+                        <label>Cambiar Contraseña:</label>
+                        <input type="password" id="pass-actual" placeholder="Contraseña actual" style="margin-bottom: 5px;">
+                        <input type="password" id="pass-nueva" placeholder="Nueva contraseña">
+                        <button class="btn-profile-action" onclick="cambiarPassword()">Actualizar Contraseña</button>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <!-- Borrar Datos -->
+                    <button class="btn-danger-soft" onclick="borrarTodoElSistema()">⚠️ Borrar Todo el Sistema</button>
+
+                    <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-container">
+            <!-- Panel de Tarjetas Financieras -->
+            <div class="summary-cards">
+                <div class="card inversion">
+                    <h3>Inversión en Stock</h3>
+                    <div class="amount" id="total-inversion">$0.00</div>
+                </div>
+                <div class="card vendidos">
+                    <h3>Productos Vendidos</h3>
+                    <div class="amount" id="total-productos-vendidos">0 uds.</div>
+                </div>
+                <div class="card ganancia">
+                    <h3>Ganancias por Ventas</h3>
+                    <div class="amount" id="total-ganancia">$0.00</div>
+                </div>
+                <div class="card proveedores">
+                    <h3>Por Pagar a Proveedores</h3>
+                    <div class="amount" id="total-proveedores">$0.00</div>
+                </div>
+            </div>
+
+            <div class="grid-formularios">
+                <!-- Formulario para agregar productos -->
+                <div class="form-container">
+                    <h2>Agregar Nuevo Producto</h2>
+                    <form id="form-producto">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="nombre">Producto:</label>
+                                <input type="text" id="nombre" placeholder="Ej. Camiseta" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="costo">Costo ($):</label>
+                                <input type="number" id="costo" step="0.01" placeholder="Ej. 10.00" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="precio">Precio Venta ($):</label>
+                                <input type="number" id="precio" step="0.01" placeholder="Ej. 19.99" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="cantidad">Stock Inicial:</label>
+                                <input type="number" id="cantidad" placeholder="Ej. 50" required min="0">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-guardar">Guardar Producto</button>
+                    </form>
+                </div>
+
+                <!-- Formulario para registro de proveedores -->
+                <div class="form-container">
+                    <h2>Deuda / Pago a Proveedor</h2>
+                    <form id="form-proveedor">
+                        <div class="form-group">
+                            <label for="concepto-proveedor">Concepto / Proveedor:</label>
+                            <input type="text" id="concepto-proveedor" placeholder="Ej. Lote de telas marzo" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="monto-proveedor">Monto Por Pagar ($):</label>
+                            <input type="number" id="monto-proveedor" step="0.01" placeholder="Ej. 150.00" required min="0.01">
+                        </div>
+                        <button type="submit" class="btn-proveedor">Registrar Deuda</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tabla de productos -->
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Costo</th>
+                            <th>Precio Público</th>
+                            <th>Stock</th>
+                            <th>Vendidos</th>
+                            <th>Gestionar Stock</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-productos">
+                        <!-- Productos agregados aparecerán aquí -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONTROL Y GESTIÓN DEL PERFIL Y CREDENCIALES ---
+
+        function obtenerPerfil() {
+            const perfilGuardado = localStorage.getItem('inventario_perfil');
+            if (perfilGuardado) {
+                return JSON.parse(perfilGuardado);
+            }
+            return {
+                nombre: "Administrador",
+                usuario: "admin",
+                pass: "1234"
+            };
+        }
+
+        function guardarPerfil(perfil) {
+            localStorage.setItem('inventario_perfil', JSON.stringify(perfil));
+            actualizarUIPerfil();
+        }
+
+        function actualizarUIPerfil() {
+            const perfil = obtenerPerfil();
+            document.getElementById('display-user-name').textContent = perfil.nombre;
+            document.getElementById('dropdown-name').textContent = perfil.nombre;
+            document.getElementById('dropdown-user-login').textContent = "Usuario: " + perfil.usuario;
+            document.getElementById('avatar-initial').textContent = perfil.nombre.charAt(0).toUpperCase();
+            document.getElementById('profile-name-input').value = perfil.nombre;
+        }
+
+        function toggleProfileDropdown() {
+            const dropdown = document.getElementById('profile-dropdown');
+            dropdown.classList.toggle('active');
+        }
+
+        // Cerrar el menú si se hace clic fuera de él
+        window.addEventListener('click', function(e) {
+            const container = document.querySelector('.profile-container');
+            if (container && !container.contains(e.target)) {
+                document.getElementById('profile-dropdown').classList.remove('active');
+            }
+        });
+
+        function guardarNombrePerfil() {
+            const nuevoNombre = document.getElementById('profile-name-input').value.trim();
+            if (!nuevoNombre) {
+                alert("Por favor ingresa un nombre válido.");
+                return;
+            }
+            const perfil = obtenerPerfil();
+            perfil.nombre = nuevoNombre;
+            guardarPerfil(perfil);
+            alert("Nombre actualizado correctamente.");
+        }
+
+        function cambiarPassword() {
+            const actual = document.getElementById('pass-actual').value.trim();
+            const nueva = document.getElementById('pass-nueva').value.trim();
+            const perfil = obtenerPerfil();
+
+            if (!actual || !nueva) {
+                alert("Debes llenar la contraseña actual y la nueva.");
+                return;
+            }
+
+            if (actual !== perfil.pass) {
+                alert("La contraseña actual es incorrecta.");
+                return;
+            }
+
+            perfil.pass = nueva;
+            guardarPerfil(perfil);
+            document.getElementById('pass-actual').value = '';
+            document.getElementById('pass-nueva').value = '';
+            alert("Contraseña actualizada con éxito.");
+        }
+
+        // --- SISTEMA DE SESIÓN ---
+
+        const loginOverlay = document.getElementById('login-overlay');
+        const appContent = document.getElementById('app-content');
+        const loginForm = document.getElementById('login-form');
+        const loginError = document.getElementById('login-error');
+
+        loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const userIn = document.getElementById('login-usuario').value.trim();
+            const passIn = document.getElementById('login-pass').value.trim();
+            const perfil = obtenerPerfil();
+
+            if (userIn === perfil.usuario && passIn === perfil.pass) {
+                sessionStorage.setItem('sesion_activa', 'true');
+                mostrarSistema();
+            } else {
+                loginError.style.display = 'block';
+            }
+        });
+
+        function verificarSesion() {
+            const estaLogueado = sessionStorage.getItem('sesion_activa');
+            if (estaLogueado === 'true') {
+                mostrarSistema();
+            } else {
+                loginOverlay.style.display = 'flex';
+                appContent.style.display = 'none';
+            }
+        }
+
+        function mostrarSistema() {
+            loginOverlay.style.display = 'none';
+            appContent.style.display = 'block';
+            actualizarUIPerfil();
+            cargarDatosSistema();
+        }
+
+        function cerrarSesion() {
+            sessionStorage.removeItem('sesion_activa');
+            location.reload();
+        }
+
+        // --- LÓGICA DE INVENTARIO Y DATOS ---
+
+        const formulario = document.getElementById('form-producto');
+        const formProveedor = document.getElementById('form-proveedor');
+        const tablaProductos = document.getElementById('tabla-productos');
+
+        const totalInversionEl = document.getElementById('total-inversion');
+        const totalGananciaEl = document.getElementById('total-ganancia');
+        const totalProveedoresEl = document.getElementById('total-proveedores');
+        const totalProductosVendidosEl = document.getElementById('total-productos-vendidos');
+
+        let gananciasVentasAcumuladas = 0;
+        let montoPorPagarProveedor = 0;
+        let totalUnidadesVendidas = 0;
+
+        function guardarDatosSistema() {
+            const productos = [];
+            const filas = tablaProductos.querySelectorAll('tr');
+
+            filas.forEach(fila => {
+                const nombre = fila.querySelector('.col-nombre').textContent.trim();
+                const costo = parseFloat(fila.dataset.costo) || 0;
+                const precio = parseFloat(fila.dataset.precio) || 0;
+                const stock = parseInt(fila.querySelector('.stock-valor').textContent) || 0;
+                const vendidos = parseInt(fila.querySelector('.vendidos-valor').textContent) || 0;
+
+                productos.push({ nombre, costo, precio, stock, vendidos });
+            });
+
+            const datosGuardar = {
+                productos: productos,
+                ganancias: gananciasVentasAcumuladas,
+                proveedores: montoPorPagarProveedor,
+                unidadesVendidas: totalUnidadesVendidas
+            };
+
+            localStorage.setItem('inventario_sistema_datos', JSON.stringify(datosGuardar));
+        }
+
+        function cargarDatosSistema() {
+            const datosGuardados = localStorage.getItem('inventario_sistema_datos');
+            if (!datosGuardados) return;
+
+            const datos = JSON.parse(datosGuardados);
+
+            gananciasVentasAcumuladas = datos.ganancias || 0;
+            montoPorPagarProveedor = datos.proveedores || 0;
+            totalUnidadesVendidas = datos.unidadesVendidas || 0;
+
+            totalGananciaEl.textContent = `$${gananciasVentasAcumuladas.toFixed(2)}`;
+            totalProveedoresEl.textContent = `$${montoPorPagarProveedor.toFixed(2)}`;
+            totalProductosVendidosEl.textContent = `${totalUnidadesVendidas} uds.`;
+
+            tablaProductos.innerHTML = '';
+
+            if (datos.productos && datos.productos.length > 0) {
+                datos.productos.forEach(prod => {
+                    crearFilaProducto(prod.nombre, prod.costo, prod.precio, prod.stock, prod.vendidos);
+                });
+            }
+
+            actualizarInversionTotal();
+        }
+
+        function borrarTodoElSistema() {
+            if (confirm("⚠️ ¿Estás completamente seguro de que deseas borrar todos los productos y finanzas del sistema? Esta acción es irreversible.")) {
+                localStorage.removeItem('inventario_sistema_datos');
+                location.reload();
+            }
+        }
+
+        function actualizarInversionTotal() {
+            let inversionTotal = 0;
+            const filas = tablaProductos.querySelectorAll('tr');
+
+            filas.forEach(fila => {
+                const costo = parseFloat(fila.dataset.costo) || 0;
+                const stock = parseInt(fila.querySelector('.stock-valor').textContent) || 0;
+                inversionTotal += costo * stock;
+            });
+
+            totalInversionEl.textContent = `$${inversionTotal.toFixed(2)}`;
+        }
+
+        function crearFilaProducto(nombre, costoNum, precioNum, cantidadNum, vendidosNum = 0) {
+            const costo = costoNum.toFixed(2);
+            const precio = precioNum.toFixed(2);
+
+            const nuevaFila = document.createElement('tr');
+            nuevaFila.dataset.costo = costoNum;
+            nuevaFila.dataset.precio = precioNum;
+
+            nuevaFila.innerHTML = `
+                <td class="col-nombre">${nombre}</td>
+                <td class="col-costo">$${costo}</td>
+                <td class="col-precio">$${precio}</td>
+                <td class="col-stock"><span class="stock-valor">${cantidadNum}</span> unidades</td>
+                <td><span class="badge-vendidos"><span class="vendidos-valor">${vendidosNum}</span> uds.</span></td>
+                <td>
+                    <div style="display: flex; align-items: center;">
+                        <input type="number" class="input-cantidad-movimiento" placeholder="Cant." min="1">
+                        <button type="button" class="btn-sumar" onclick="agregarStock(this)" title="Aumentar inventario">+</button>
+                        <button type="button" class="btn-descontar" onclick="descontarStock(this)" title="Registrar venta">-</button>
+                    </div>
+                </td>
+                <td>
+                    <button type="button" class="btn-editar" onclick="editarProducto(this)">Editar</button>
+                    <button type="button" class="btn-eliminar" onclick="eliminarFila(this)">Eliminar</button>
+                </td>
+            `;
+
+            if (cantidadNum === 0) {
+                nuevaFila.style.backgroundColor = '#ffe6e6';
+            }
+
+            tablaProductos.appendChild(nuevaFila);
+        }
+
+        formProveedor.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const monto = parseFloat(document.getElementById('monto-proveedor').value);
+
+            if (isNaN(monto) || monto <= 0) {
+                alert("Ingresa un monto válido.");
+                return;
+            }
+
+            montoPorPagarProveedor += monto;
+            totalProveedoresEl.textContent = `$${montoPorPagarProveedor.toFixed(2)}`;
+
+            formProveedor.reset();
+            guardarDatosSistema();
+        });
+
+        formulario.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const nombre = document.getElementById('nombre').value;
+            const costoNum = parseFloat(document.getElementById('costo').value);
+            const precioNum = parseFloat(document.getElementById('precio').value);
+            const cantidadNum = parseInt(document.getElementById('cantidad').value);
+
+            crearFilaProducto(nombre, costoNum, precioNum, cantidadNum, 0);
+
+            actualizarInversionTotal();
+            formulario.reset();
+            guardarDatosSistema();
+        });
+
+        function editarProducto(boton) {
+            const fila = boton.closest('tr');
+            const colNombre = fila.querySelector('.col-nombre');
+            const colCosto = fila.querySelector('.col-costo');
+            const colPrecio = fila.querySelector('.col-precio');
+
+            if (boton.textContent === "Editar") {
+                const nombreActual = colNombre.textContent.trim();
+                const costoActual = parseFloat(fila.dataset.costo);
+                const precioActual = parseFloat(fila.dataset.precio);
+
+                colNombre.innerHTML = `<input type="text" class="input-edit edit-nombre" value="${nombreActual}">`;
+                colCosto.innerHTML = `<input type="number" step="0.01" class="input-edit edit-costo" value="${costoActual}">`;
+                colPrecio.innerHTML = `<input type="number" step="0.01" class="input-edit edit-precio" value="${precioActual}">`;
+
+                boton.textContent = "Guardar";
+                boton.style.backgroundColor = "#28a745";
+            } else {
+                const nuevoNombre = colNombre.querySelector('.edit-nombre').value.trim();
+                const nuevoCosto = parseFloat(colCosto.querySelector('.edit-costo').value);
+                const nuevoPrecio = parseFloat(colPrecio.querySelector('.edit-precio').value);
+
+                if (!nuevoNombre || isNaN(nuevoCosto) || isNaN(nuevoPrecio) || nuevoCosto < 0 || nuevoPrecio < 0) {
+                    alert("Por favor ingresa datos válidos.");
+                    return;
+                }
+
+                fila.dataset.costo = nuevoCosto;
+                fila.dataset.precio = nuevoPrecio;
+
+                colNombre.textContent = nuevoNombre;
+                colCosto.textContent = `$${nuevoCosto.toFixed(2)}`;
+                colPrecio.textContent = `$${nuevoPrecio.toFixed(2)}`;
+
+                boton.textContent = "Editar";
+                boton.style.backgroundColor = "#6c757d";
+
+                actualizarInversionTotal();
+                guardarDatosSistema();
+            }
+        }
+
+        function agregarStock(boton) {
+            const fila = boton.closest('tr');
+            const spanStock = fila.querySelector('.stock-valor');
+            const inputCantidad = fila.querySelector('.input-cantidad-movimiento');
+
+            let stockActual = parseInt(spanStock.textContent);
+            let cantidadAgregar = parseInt(inputCantidad.value);
+
+            if (isNaN(cantidadAgregar) || cantidadAgregar <= 0) {
+                alert("Por favor, ingresa una cantidad válida a sumar.");
+                return;
+            }
+
+            stockActual += cantidadAgregar;
+            spanStock.textContent = stockActual;
+
+            fila.style.backgroundColor = '';
+            inputCantidad.value = '';
+            actualizarInversionTotal();
+            guardarDatosSistema();
+        }
+
+        function descontarStock(boton) {
+            const fila = boton.closest('tr');
+            const spanStock = fila.querySelector('.stock-valor');
+            const spanVendidos = fila.querySelector('.vendidos-valor');
+            const inputCantidad = fila.querySelector('.input-cantidad-movimiento');
+            
+            let stockActual = parseInt(spanStock.textContent);
+            let vendidosActuales = parseInt(spanVendidos.textContent);
+            let cantidadVendida = parseInt(inputCantidad.value);
+
+            const costo = parseFloat(fila.dataset.costo);
+            const precio = parseFloat(fila.dataset.precio);
+
+            if (isNaN(cantidadVendida) || cantidadVendida <= 0) {
+                alert("Por favor, ingresa una cantidad válida a descontar.");
+                return;
+            }
+
+            if (cantidadVendida > stockActual) {
+                alert("No puedes vender más unidades de las que tienes en stock.");
+                return;
+            }
+
+            stockActual -= cantidadVendida;
+            spanStock.textContent = stockActual;
+
+            vendidosActuales += cantidadVendida;
+            spanVendidos.textContent = vendidosActuales;
+
+            totalUnidadesVendidas += cantidadVendida;
+            totalProductosVendidosEl.textContent = `${totalUnidadesVendidas} uds.`;
+
+            const gananciaVenta = (precio - costo) * cantidadVendida;
+            gananciasVentasAcumuladas += gananciaVenta;
+            totalGananciaEl.textContent = `$${gananciasVentasAcumuladas.toFixed(2)}`;
+
+            inputCantidad.value = '';
+            actualizarInversionTotal();
+
+            if (stockActual === 0) {
+                fila.style.backgroundColor = '#ffe6e6';
+            }
+
+            guardarDatosSistema();
+        }
+
+        function eliminarFila(boton) {
+            const fila = boton.closest('tr');
+            fila.remove();
+            actualizarInversionTotal();
+            guardarDatosSistema();
+        }
+
+        // Inicializar
+        window.addEventListener('DOMContentLoaded', verificarSesion);
+    </script>
+</body>
+</html>
