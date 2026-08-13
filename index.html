@@ -68,8 +68,16 @@
         .input-cantidad-movimiento { width: 55px; padding: 5px; margin-right: 5px; display: inline-block; }
         .btn-sumar { background-color: #17a2b8; color: white; padding: 5px 8px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .btn-descontar { background-color: #ffc107; color: #212529; padding: 5px 8px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-editar { background-color: #ffc107; color: #212529; padding: 5px 8px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 4px; }
         .btn-eliminar { background-color: #dc3545; color: white; padding: 5px 8px; border: none; border-radius: 4px; cursor: pointer; }
         .badge-vendidos { background-color: #e9ecef; color: #495057; padding: 3px 8px; border-radius: 12px; font-weight: bold; font-size: 12px; }
+
+        /* Modal Editar */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 10000; }
+        .modal-card { background: white; padding: 25px; border-radius: 8px; width: 100%; max-width: 400px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .modal-card h2 { margin-top: 0; font-size: 18px; color: #2c3e50; }
+        .modal-buttons { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-cancelar { background-color: #6c757d; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; width: 50%; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -89,6 +97,34 @@
                 <button type="submit" class="btn-login">Iniciar Sesión</button>
                 <div id="login-error" class="error-msg">Usuario o contraseña incorrectos</div>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal Editar Producto -->
+    <div id="modal-editar" class="modal-overlay">
+        <div class="modal-card">
+            <h2>Editar Producto</h2>
+            <input type="hidden" id="edit-index">
+            <div class="form-group">
+                <label for="edit-nombre">Nombre del Producto:</label>
+                <input type="text" id="edit-nombre" required>
+            </div>
+            <div class="form-group">
+                <label for="edit-costo">Costo ($):</label>
+                <input type="number" id="edit-costo" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label for="edit-precio">Precio Público ($):</label>
+                <input type="number" id="edit-precio" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label for="edit-stock">Stock Actual:</label>
+                <input type="number" id="edit-stock" min="0" required>
+            </div>
+            <div class="modal-buttons">
+                <button type="button" class="btn-cancelar" onclick="cerrarModalEditar()">Cancelar</button>
+                <button type="button" class="btn-guardar" onclick="guardarEdicionProducto()" style="margin-top:0; width: 50%;">Guardar</button>
+            </div>
         </div>
     </div>
 
@@ -269,7 +305,6 @@
                 if (!window.datosBase.productos) window.datosBase.productos = [];
                 if (!window.datosBase.perfil) window.datosBase.perfil = { nombre: "Administrador", usuario: "admin", pass: "1234" };
             } else {
-                // Si la base de datos está vacía, inicializarla
                 window.guardarDatos();
             }
             actualizarUIPerfil();
@@ -318,6 +353,7 @@
                             </div>
                         </td>
                         <td>
+                            <button type="button" class="btn-editar" onclick="abrirModalEditar(${i})">Editar</button>
                             <button type="button" class="btn-eliminar" onclick="eliminarProducto(${i})">Eliminar</button>
                         </td>
                     `;
@@ -369,6 +405,40 @@
             window.datosBase.ganancias = (window.datosBase.ganancias || 0) + ((prod.precio - prod.costo) * val);
 
             window.guardarDatos();
+        };
+
+        window.abrirModalEditar = function(i) {
+            const prod = window.datosBase.productos[i];
+            document.getElementById('edit-index').value = i;
+            document.getElementById('edit-nombre').value = prod.nombre;
+            document.getElementById('edit-costo').value = prod.costo;
+            document.getElementById('edit-precio').value = prod.precio;
+            document.getElementById('edit-stock').value = prod.stock;
+            document.getElementById('modal-editar').style.display = 'flex';
+        };
+
+        window.cerrarModalEditar = function() {
+            document.getElementById('modal-editar').style.display = 'none';
+        };
+
+        window.guardarEdicionProducto = function() {
+            const i = document.getElementById('edit-index').value;
+            const nom = document.getElementById('edit-nombre').value.trim();
+            const cos = parseFloat(document.getElementById('edit-costo').value);
+            const pre = parseFloat(document.getElementById('edit-precio').value);
+            const stk = parseInt(document.getElementById('edit-stock').value);
+
+            if (!nom || isNaN(cos) || isNaN(pre) || isNaN(stk) || stk < 0) {
+                return alert("Por favor completa todos los campos con valores válidos.");
+            }
+
+            window.datosBase.productos[i].nombre = nom;
+            window.datosBase.productos[i].costo = cos;
+            window.datosBase.productos[i].precio = pre;
+            window.datosBase.productos[i].stock = stk;
+
+            window.guardarDatos();
+            cerrarModalEditar();
         };
 
         window.eliminarProducto = function(i) {
