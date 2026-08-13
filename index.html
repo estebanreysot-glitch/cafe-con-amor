@@ -220,9 +220,9 @@
     </div>
 
     <script>
-        // CONFIGURACIÓN DE APIS CON TU NUEVA ACCESS KEY E ID
+        // CONFIGURACIÓN DE APIS CON X-MASTER-KEY Y BIN META DESACTIVADO
         const BIN_ID = '6a7e00fff5f4af5e291231e6'; 
-        const ACCESS_KEY = '$2a$10$QVlKSzJQC5r/G3W9IdbcaeG9nTHrw3nJzvwqMXF7.JPk0eaDPlmm';
+        const MASTER_KEY = '$2a$10$RZtMj57NCeGwO.OxoJHqRO8YPx7e9wIk/9lEZmSfyQbXingxfqamO';
         const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
         // Estado inicial
@@ -247,14 +247,18 @@
             indicarEstadoSync("⏳ Cargando...", "#fff3cd", "#856404");
             try {
                 const res = await fetch(`${API_URL}/latest`, {
+                    method: 'GET',
                     headers: { 
-                        'X-Access-Key': ACCESS_KEY 
+                        'X-Master-Key': MASTER_KEY,
+                        'X-Bin-Meta': 'false'
                     }
                 });
                 
                 if (res.ok) {
                     const data = await res.json();
-                    if (data.record && data.record.perfil) {
+                    if (data && data.perfil) {
+                        datosBase = data;
+                    } else if (data.record && data.record.perfil) {
                         datosBase = data.record;
                     }
                     indicarEstadoSync("☁️ Sincronizado", "#e8f5e9", "#28a745");
@@ -277,7 +281,7 @@
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-Access-Key': ACCESS_KEY
+                        'X-Master-Key': MASTER_KEY
                     },
                     body: JSON.stringify(datosBase)
                 });
@@ -352,8 +356,8 @@
                 vendidos: 0
             };
             datosBase.productos.push(nuevo);
-            guardarEnNube();
             renderizarTablaYFinanzas();
+            guardarEnNube();
             this.reset();
         });
 
@@ -361,8 +365,8 @@
             e.preventDefault();
             const monto = parseFloat(document.getElementById('monto-proveedor').value);
             datosBase.proveedores = (datosBase.proveedores || 0) + monto;
-            guardarEnNube();
             renderizarTablaYFinanzas();
+            guardarEnNube();
             this.reset();
         });
 
@@ -370,8 +374,8 @@
             const val = parseInt(document.getElementById(`cant-${i}`).value);
             if (isNaN(val) || val <= 0) return alert("Ingresa una cantidad válida.");
             datosBase.productos[i].stock += val;
-            guardarEnNube();
             renderizarTablaYFinanzas();
+            guardarEnNube();
         }
 
         function restarStock(i) {
@@ -385,15 +389,15 @@
             datosBase.unidadesVendidas = (datosBase.unidadesVendidas || 0) + val;
             datosBase.ganancias = (datosBase.ganancias || 0) + ((prod.precio - prod.costo) * val);
 
-            guardarEnNube();
             renderizarTablaYFinanzas();
+            guardarEnNube();
         }
 
         function eliminarProducto(i) {
             if (confirm("¿Eliminar este producto del inventario?")) {
                 datosBase.productos.splice(i, 1);
-                guardarEnNube();
                 renderizarTablaYFinanzas();
+                guardarEnNube();
             }
         }
 
@@ -403,8 +407,8 @@
                 datosBase.proveedores = 0;
                 datosBase.unidadesVendidas = 0;
                 datosBase.productos = [];
-                guardarEnNube();
                 renderizarTablaYFinanzas();
+                guardarEnNube();
             }
         }
 
@@ -417,8 +421,8 @@
             const n = document.getElementById('profile-name-input').value.trim();
             if (n) {
                 datosBase.perfil.nombre = n;
-                guardarEnNube();
                 actualizarUIPerfil();
+                guardarEnNube();
                 alert("Nombre actualizado.");
             }
         }
