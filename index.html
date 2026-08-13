@@ -247,12 +247,18 @@
             indicarEstadoSync("⏳ Cargando...", "#fff3cd", "#856404");
             try {
                 const res = await fetch(`${API_URL}/latest`, {
-                    headers: { 'X-Master-Key': SECRET_KEY }
+                    headers: { 
+                        'X-Master-Key': SECRET_KEY 
+                    }
                 });
+                
                 if (res.ok) {
                     const data = await res.json();
                     if (data.record && data.record.perfil) {
                         datosBase = data.record;
+                    } else {
+                        // Si el Bin está vacío o tiene formato básico, lo inicializamos con los datos por defecto
+                        await guardarEnNube();
                     }
                     indicarEstadoSync("☁️ Sincronizado", "#e8f5e9", "#28a745");
                     actualizarUIPerfil();
@@ -266,7 +272,7 @@
             }
         }
 
-        // GUARDAR DATOS EN LA NUBE (CORREGIDO)
+        // GUARDAR DATOS EN LA NUBE
         async function guardarEnNube() {
             indicarEstadoSync("⏳ Guardando...", "#fff3cd", "#856404");
             try {
@@ -274,8 +280,7 @@
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-Master-Key': SECRET_KEY,
-                        'X-Bin-Versioning': 'false'
+                        'X-Master-Key': SECRET_KEY
                     },
                     body: JSON.stringify(datosBase)
                 });
