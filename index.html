@@ -20,7 +20,7 @@
 
         #app-content { display: none; }
 
-        .sync-status { font-size: 12px; font-weight: bold; color: #28a745; background: #e8f5e9; padding: 4px 10px; border-radius: 12px; margin-left: 15px; display: inline-flex; align-items: center; gap: 5px; }
+        .sync-status { font-size: 12px; font-weight: bold; color: #17a2b8; background: #e0f7fa; padding: 4px 10px; border-radius: 12px; margin-left: 15px; display: inline-flex; align-items: center; gap: 5px; }
 
         .top-navbar { background-color: #ffffff; border-bottom: 1px solid #e0e0e0; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.04); position: relative; }
         .top-navbar h1 { margin: 0; font-size: 22px; color: #2c3e50; display: flex; align-items: center; }
@@ -94,7 +94,7 @@
 
     <div id="app-content">
         <header class="top-navbar">
-            <h1>Gestión de Inventario <span class="sync-status" id="sync-status">✅ Sistema Listo</span></h1>
+            <h1>Gestión de Inventario <span class="sync-status" id="sync-status">☁️ Conectando Nube...</span></h1>
 
             <div class="profile-container">
                 <button class="profile-btn" onclick="toggleProfileDropdown()">
@@ -213,27 +213,33 @@
         </div>
     </div>
 
-    <script>
-        // Limpieza de datos antiguos
-        localStorage.removeItem('cfg_bin_id');
-        localStorage.removeItem('cfg_api_key');
+    <!-- Módulos de Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        let datosBase = {
+        // Configuración de tu proyecto Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyBufhaU8nnmNOmrS1ZO53o75nwfnX7cMmw",
+            authDomain: "mi-inventario-a6c06.firebaseapp.com",
+            projectId: "mi-inventario-a6c06",
+            storageBucket: "mi-inventario-a6c06.firebasestorage.app",
+            messagingSenderId: "25819173525",
+            appId: "1:25819173525:web:586e603591258e5f02419c",
+            measurementId: "G-PY4VQMHKQD"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const docRef = doc(db, "inventario", "datos_generales");
+
+        window.datosBase = {
             perfil: { nombre: "Administrador", usuario: "admin", pass: "1234" },
             ganancias: 0,
             proveedores: 0,
             unidadesVendidas: 0,
             productos: []
         };
-
-        const localData = localStorage.getItem('inventario_datos');
-        const legacyData = localStorage.getItem('inventario_local_backup');
-
-        if (localData) {
-            try { datosBase = JSON.parse(localData); } catch(e){}
-        } else if (legacyData) {
-            try { datosBase = JSON.parse(legacyData); } catch(e){}
-        }
 
         function indicarEstado(mensaje, colorFondo, colorTexto) {
             const syncStatusEl = document.getElementById('sync-status');
@@ -244,36 +250,55 @@
             }
         }
 
-        function guardarDatos() {
-            localStorage.setItem('inventario_datos', JSON.stringify(datosBase));
-            indicarEstado("✅ Guardado Correcto", "#e8f5e9", "#28a745");
-        }
+        // Guardar cambios directamente en Firebase
+        window.guardarDatos = async function() {
+            indicarEstado("⏳ Guardando...", "#fff3cd", "#856404");
+            try {
+                await setDoc(docRef, window.datosBase);
+                indicarEstado("☁️ Nube Sincronizada", "#e8f5e9", "#28a745");
+            } catch (error) {
+                console.error("Error guardando:", error);
+                indicarEstado("⚠️ Error al Guardar", "#f8d7da", "#721c24");
+            }
+        };
 
-        function cargarDatos() {
+        // Escuchar cambios en Tiempo Real desde la Nube
+        onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+                window.datosBase = docSnap.data();
+                if (!window.datosBase.productos) window.datosBase.productos = [];
+                if (!window.datosBase.perfil) window.datosBase.perfil = { nombre: "Administrador", usuario: "admin", pass: "1234" };
+            } else {
+                // Si la base de datos está vacía, inicializarla
+                window.guardarDatos();
+            }
             actualizarUIPerfil();
             renderizarTablaYFinanzas();
-            indicarEstado("✅ Sistema Listo", "#e8f5e9", "#28a745");
-        }
+            indicarEstado("☁️ Nube Sincronizada", "#e8f5e9", "#28a745");
+        }, (error) => {
+            console.error("Error reconectando:", error);
+            indicarEstado("⚠️ Error de Conexión Nube", "#f8d7da", "#721c24");
+        });
 
         function actualizarUIPerfil() {
-            document.getElementById('display-user-name').textContent = datosBase.perfil.nombre;
-            document.getElementById('dropdown-name').textContent = datosBase.perfil.nombre;
-            document.getElementById('dropdown-user-login').textContent = "Usuario: " + datosBase.perfil.usuario;
-            document.getElementById('avatar-initial').textContent = datosBase.perfil.nombre.charAt(0).toUpperCase();
-            document.getElementById('profile-name-input').value = datosBase.perfil.nombre;
+            document.getElementById('display-user-name').textContent = window.datosBase.perfil.nombre;
+            document.getElementById('dropdown-name').textContent = window.datosBase.perfil.nombre;
+            document.getElementById('dropdown-user-login').textContent = "Usuario: " + window.datosBase.perfil.usuario;
+            document.getElementById('avatar-initial').textContent = window.datosBase.perfil.nombre.charAt(0).toUpperCase();
+            document.getElementById('profile-name-input').value = window.datosBase.perfil.nombre;
         }
 
         function renderizarTablaYFinanzas() {
-            document.getElementById('total-ganancia').textContent = `$${(datosBase.ganancias || 0).toFixed(2)}`;
-            document.getElementById('total-proveedores').textContent = `$${(datosBase.proveedores || 0).toFixed(2)}`;
-            document.getElementById('total-productos-vendidos').textContent = `${datosBase.unidadesVendidas || 0} uds.`;
+            document.getElementById('total-ganancia').textContent = `$${(window.datosBase.ganancias || 0).toFixed(2)}`;
+            document.getElementById('total-proveedores').textContent = `$${(window.datosBase.proveedores || 0).toFixed(2)}`;
+            document.getElementById('total-productos-vendidos').textContent = `${window.datosBase.unidadesVendidas || 0} uds.`;
 
             const tabla = document.getElementById('tabla-productos');
             tabla.innerHTML = '';
             let inversionTotal = 0;
 
-            if (datosBase.productos && datosBase.productos.length > 0) {
-                datosBase.productos.forEach((prod, i) => {
+            if (window.datosBase.productos && window.datosBase.productos.length > 0) {
+                window.datosBase.productos.forEach((prod, i) => {
                     inversionTotal += prod.costo * prod.stock;
 
                     const fila = document.createElement('tr');
@@ -312,97 +337,90 @@
                 stock: parseInt(document.getElementById('cantidad').value),
                 vendidos: 0
             };
-            datosBase.productos.push(nuevo);
-            renderizarTablaYFinanzas();
-            guardarDatos();
+            window.datosBase.productos.push(nuevo);
+            window.guardarDatos();
             this.reset();
         });
 
         document.getElementById('form-proveedor').addEventListener('submit', function(e) {
             e.preventDefault();
             const monto = parseFloat(document.getElementById('monto-proveedor').value);
-            datosBase.proveedores = (datosBase.proveedores || 0) + monto;
-            renderizarTablaYFinanzas();
-            guardarDatos();
+            window.datosBase.proveedores = (window.datosBase.proveedores || 0) + monto;
+            window.guardarDatos();
             this.reset();
         });
 
-        function sumarStock(i) {
+        window.sumarStock = function(i) {
             const val = parseInt(document.getElementById(`cant-${i}`).value);
             if (isNaN(val) || val <= 0) return alert("Ingresa una cantidad válida.");
-            datosBase.productos[i].stock += val;
-            renderizarTablaYFinanzas();
-            guardarDatos();
-        }
+            window.datosBase.productos[i].stock += val;
+            window.guardarDatos();
+        };
 
-        function restarStock(i) {
+        window.restarStock = function(i) {
             const val = parseInt(document.getElementById(`cant-${i}`).value);
             if (isNaN(val) || val <= 0) return alert("Ingresa una cantidad válida.");
-            const prod = datosBase.productos[i];
+            const prod = window.datosBase.productos[i];
             if (val > prod.stock) return alert("No hay suficiente stock.");
 
             prod.stock -= val;
             prod.vendidos = (prod.vendidos || 0) + val;
-            datosBase.unidadesVendidas = (datosBase.unidadesVendidas || 0) + val;
-            datosBase.ganancias = (datosBase.ganancias || 0) + ((prod.precio - prod.costo) * val);
+            window.datosBase.unidadesVendidas = (window.datosBase.unidadesVendidas || 0) + val;
+            window.datosBase.ganancias = (window.datosBase.ganancias || 0) + ((prod.precio - prod.costo) * val);
 
-            renderizarTablaYFinanzas();
-            guardarDatos();
-        }
+            window.guardarDatos();
+        };
 
-        function eliminarProducto(i) {
+        window.eliminarProducto = function(i) {
             if (confirm("¿Eliminar este producto del inventario?")) {
-                datosBase.productos.splice(i, 1);
-                renderizarTablaYFinanzas();
-                guardarDatos();
+                window.datosBase.productos.splice(i, 1);
+                window.guardarDatos();
             }
-        }
+        };
 
-        function borrarTodoElSistema() {
-            if (confirm("⚠️ ¿Deseas borrar TODOS los productos y registros del sistema?")) {
-                datosBase.ganancias = 0;
-                datosBase.proveedores = 0;
-                datosBase.unidadesVendidas = 0;
-                datosBase.productos = [];
-                renderizarTablaYFinanzas();
-                guardarDatos();
+        window.borrarTodoElSistema = function() {
+            if (confirm("⚠️ ¿Deseas borrar TODOS los productos y registros de la nube?")) {
+                window.datosBase.ganancias = 0;
+                window.datosBase.proveedores = 0;
+                window.datosBase.unidadesVendidas = 0;
+                window.datosBase.productos = [];
+                window.guardarDatos();
             }
-        }
+        };
 
-        function toggleProfileDropdown() {
+        window.toggleProfileDropdown = function() {
             document.getElementById('profile-dropdown').classList.toggle('active');
-        }
+        };
 
-        function guardarNombrePerfil() {
+        window.guardarNombrePerfil = function() {
             const n = document.getElementById('profile-name-input').value.trim();
             if (n) {
-                datosBase.perfil.nombre = n;
-                actualizarUIPerfil();
-                guardarDatos();
+                window.datosBase.perfil.nombre = n;
+                window.guardarDatos();
                 alert("Nombre actualizado.");
             }
-        }
+        };
 
-        function cambiarPassword() {
+        window.cambiarPassword = function() {
             const act = document.getElementById('pass-actual').value.trim();
             const nue = document.getElementById('pass-nueva').value.trim();
-            if (act === datosBase.perfil.pass && nue) {
-                datosBase.perfil.pass = nue;
-                guardarDatos();
+            if (act === window.datosBase.perfil.pass && nue) {
+                window.datosBase.perfil.pass = nue;
+                window.guardarDatos();
                 alert("Contraseña actualizada con éxito.");
                 document.getElementById('pass-actual').value = '';
                 document.getElementById('pass-nueva').value = '';
             } else {
                 alert("La contraseña actual no es correcta.");
             }
-        }
+        };
 
         document.getElementById('login-form').addEventListener('submit', function(e) {
             e.preventDefault();
             const u = document.getElementById('login-usuario').value.trim();
             const p = document.getElementById('login-pass').value.trim();
 
-            if (u === datosBase.perfil.usuario && p === datosBase.perfil.pass) {
+            if (u === window.datosBase.perfil.usuario && p === window.datosBase.perfil.pass) {
                 sessionStorage.setItem('sesion_activa', 'true');
                 mostrarApp();
             } else {
@@ -419,15 +437,14 @@
         function mostrarApp() {
             document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('app-content').style.display = 'block';
-            cargarDatos();
         }
 
-        function cerrarSesion() {
+        window.cerrarSesion = function() {
             sessionStorage.removeItem('sesion_activa');
             location.reload();
-        }
+        };
 
-        window.addEventListener('DOMContentLoaded', verificarSesion);
+        verificarSesion();
     </script>
 </body>
 </html>
