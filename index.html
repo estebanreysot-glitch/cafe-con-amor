@@ -118,6 +118,15 @@
                     <div class="divider"></div>
 
                     <div class="profile-section">
+                        <label>Configurar Nube (BIN ID / API Key):</label>
+                        <input type="text" id="bin-id-input" placeholder="Bin ID de JSONBin" style="margin-bottom: 5px;">
+                        <input type="text" id="api-key-input" placeholder="X-Master-Key de JSONBin">
+                        <button class="btn-profile-action" onclick="guardarConfiguracionNube()">Guardar Credenciales Nube</button>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="profile-section">
                         <label>Cambiar Contraseña:</label>
                         <input type="password" id="pass-actual" placeholder="Contraseña actual" style="margin-bottom: 5px;">
                         <input type="password" id="pass-nueva" placeholder="Nueva contraseña">
@@ -214,9 +223,8 @@
     </div>
 
     <script>
-        const BIN_ID = '6a7e00fff5f4af5e291231e6'; 
-        const API_KEY = '$2a$10$RZtMj57NCeGwO.OxoJHqRO8YPx7e9wIk/9lEZmSfyQbXingxfqamO';
-        const API_URL = 'https://api.jsonbin.io/v3/b/' + BIN_ID;
+        let BIN_ID = localStorage.getItem('cfg_bin_id') || '6a7e00fff5f4af5e291231e6'; 
+        let API_KEY = localStorage.getItem('cfg_api_key') || '$2a$10$RZtMj57NCeGwO.OxoJHqRO8YPx7e9wIk/9lEZmSfyQbXingxfqamO';
 
         let datosBase = {
             perfil: { nombre: "Administrador", usuario: "admin", pass: "1234" },
@@ -225,6 +233,12 @@
             unidadesVendidas: 0,
             productos: []
         };
+
+        // Cargar primero datos locales si existen
+        const localBackup = localStorage.getItem('inventario_local_backup');
+        if (localBackup) {
+            try { datosBase = JSON.parse(localBackup); } catch(e){}
+        }
 
         const syncStatusEl = document.getElementById('sync-status');
 
@@ -236,13 +250,26 @@
             }
         }
 
+        function guardarLocal() {
+            localStorage.setItem('inventario_local_backup', JSON.stringify(datosBase));
+        }
+
         async function cargarDesdeNube() {
             indicarEstadoSync("⏳ Cargando...", "#fff3cd", "#856404");
+            
+            if (!BIN_ID) {
+                indicarEstadoSync("💾 Modo Local", "#e2e3e5", "#383d41");
+                actualizarUIPerfil();
+                renderizarTablaYFinanzas();
+                return;
+            }
+
             try {
-                const res = await fetch(API_URL + '/latest', {
+                const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
                     method: 'GET',
                     headers: {
                         'X-Master-Key': API_KEY,
+                        'X-Access-Key': API_KEY,
                         'X-Bin-Meta': 'false'
                     }
                 });
@@ -254,37 +281,44 @@
                     } else if (data.record && data.record.perfil) {
                         datosBase = data.record;
                     }
+                    guardarLocal();
                     indicarEstadoSync("☁️ Sincronizado", "#e8f5e9", "#28a745");
-                    actualizarUIPerfil();
-                    renderizarTablaYFinanzas();
                 } else {
-                    indicarEstadoSync("⚠️ Error de conexión", "#f8d7da", "#721c24");
+                    indicarEstadoSync("💾 Guardando Local (Error Nube " + res.status + ")", "#fff3cd", "#856404");
                 }
             } catch (err) {
                 console.error(err);
-                indicarEstadoSync("⚠️ Error de conexión", "#f8d7da", "#721c24");
+                indicarEstadoSync("💾 Modo Local (Sin Conexión)", "#e2e3e5", "#383d41");
             }
+
+            actualizarUIPerfil();
+            renderizarTablaYFinanzas();
         }
 
         async function guardarEnNube() {
+            guardarLocal(); // Siempre guardar copia en el navegador primero
+            
+            if (!BIN_ID) return;
+
             indicarEstadoSync("⏳ Guardando...", "#fff3cd", "#856404");
             try {
-                const res = await fetch(API_URL, {
+                const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-Master-Key': API_KEY
+                        'X-Master-Key': API_KEY,
+                        'X-Access-Key': API_KEY
                     },
                     body: JSON.stringify(datosBase)
                 });
                 if (res.ok) {
                     indicarEstadoSync("☁️ Sincronizado", "#e8f5e9", "#28a745");
                 } else {
-                    indicarEstadoSync("⚠️ Error al guardar", "#f8d7da", "#721c24");
+                    indicarEstadoSync("💾 Guardado en Local (Error 401 Nube)", "#fff3cd", "#856404");
                 }
             } catch (err) {
                 console.error(err);
-                indicarEstadoSync("⚠️ Error de red", "#f8d7da", "#721c24");
+                indicarEstadoSync("💾 Guardado en Local", "#e2e3e5", "#383d41");
             }
         }
 
@@ -294,6 +328,19 @@
             document.getElementById('dropdown-user-login').textContent = "Usuario: " + datosBase.perfil.usuario;
             document.getElementById('avatar-initial').textContent = datosBase.perfil.nombre.charAt(0).toUpperCase();
             document.getElementById('profile-name-input').value = datosBase.perfil.nombre;
+            document.getElementById('bin-id-input').value = BIN_ID;
+            document.getElementById('api-key-input').value = API_KEY;
+        }
+
+        function guardarConfiguracionNube() {
+            const newBin = document.getElementById('bin-id-input').value.trim();
+            const newKey = document.getElementById('api-key-input').value.trim();
+            BIN_ID = newBin;
+            API_KEY = newKey;
+            localStorage.setItem('cfg_bin_id', newBin);
+            localStorage.setItem('cfg_api_key', newKey);
+            alert("Credenciales actualizadas. Intentando conectar...");
+            cargarDesdeNube();
         }
 
         function renderizarTablaYFinanzas() {
@@ -392,7 +439,7 @@
         }
 
         function borrarTodoElSistema() {
-            if (confirm("⚠️ ¿Deseas borrar TODOS los productos y registros de la nube?")) {
+            if (confirm("⚠️ ¿Deseas borrar TODOS los productos y registros del sistema?")) {
                 datosBase.ganancias = 0;
                 datosBase.proveedores = 0;
                 datosBase.unidadesVendidas = 0;
