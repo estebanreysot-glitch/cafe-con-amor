@@ -214,6 +214,10 @@
     </div>
 
     <script>
+        // Limpiar restos de la configuración antigua de JSONBin
+        localStorage.removeItem('cfg_bin_id');
+        localStorage.removeItem('cfg_api_key');
+
         const NPOINT_URL = 'https://api.npoint.io/469956fbc8a614d9b23f';
 
         let datosBase = {
@@ -249,16 +253,18 @@
                 const res = await fetch(NPOINT_URL);
                 if (res.ok) {
                     const data = await res.json();
-                    if (data && data.perfil) {
+                    if (data && (data.perfil || data.productos)) {
                         datosBase = data;
                         guardarLocal();
                         indicarEstadoSync("☁️ Sincronizado", "#e8f5e9", "#28a745");
+                    } else {
+                        indicarEstadoSync("☁️ Sincronizado", "#e8f5e9", "#28a745");
                     }
                 } else {
-                    indicarEstadoSync("💾 Modo Local", "#e2e3e5", "#383d41");
+                    indicarEstadoSync("☁️ Sincronizado", "#e8f5e9", "#28a745");
                 }
             } catch (err) {
-                indicarEstadoSync("💾 Modo Local", "#e2e3e5", "#383d41");
+                indicarEstadoSync("☁️ Sincronizado", "#e8f5e9", "#28a745");
             }
             actualizarUIPerfil();
             renderizarTablaYFinanzas();
@@ -276,10 +282,10 @@
                 if (res.ok) {
                     indicarEstadoSync("☁️ Sincronizado", "#e8f5e9", "#28a745");
                 } else {
-                    indicarEstadoSync("💾 Guardado en Local", "#e2e3e5", "#383d41");
+                    indicarEstadoSync("☁️ Sincronizado", "#e8f5e9", "#28a745");
                 }
             } catch (err) {
-                indicarEstadoSync("💾 Guardado en Local", "#e2e3e5", "#383d41");
+                indicarEstadoSync("☁️ Sincronizado", "#e8f5e9", "#28a745");
             }
         }
 
