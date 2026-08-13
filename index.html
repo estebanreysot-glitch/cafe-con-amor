@@ -8,7 +8,6 @@
         * { box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f4f6f9; color: #333; }
 
-        /* PANTALLA DE ACCESO */
         #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #1a202c; display: flex; justify-content: center; align-items: center; z-index: 9999; }
         .login-card { background: white; padding: 30px 40px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); width: 100%; max-width: 350px; text-align: center; }
         .login-card h2 { margin-top: 0; color: #2c3e50; margin-bottom: 20px; }
@@ -21,10 +20,8 @@
 
         #app-content { display: none; }
 
-        /* INDICADOR DE NUBE */
         .sync-status { font-size: 12px; font-weight: bold; color: #28a745; background: #e8f5e9; padding: 4px 10px; border-radius: 12px; margin-left: 15px; display: inline-flex; align-items: center; gap: 5px; }
 
-        /* BARRA SUPERIOR Y PERFIL */
         .top-navbar { background-color: #ffffff; border-bottom: 1px solid #e0e0e0; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.04); position: relative; }
         .top-navbar h1 { margin: 0; font-size: 22px; color: #2c3e50; display: flex; align-items: center; }
         .profile-container { position: relative; }
@@ -44,7 +41,6 @@
         .btn-danger-soft { background-color: #fff5f5; color: #dc3545; border: 1px solid #feb2b2; padding: 8px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; width: 100%; font-weight: bold; }
         .btn-logout { background-color: #6c757d; color: white; border: none; padding: 8px 12px; border-radius: 4px; font-size: 13px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px; }
 
-        /* CONTENIDO PRINCIPAL */
         .main-container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
         .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
         .card { background: white; padding: 18px 20px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); border-left: 5px solid #007bff; }
@@ -78,7 +74,6 @@
 </head>
 <body>
 
-    <!-- PANTALLA DE INICIO DE SESIÓN -->
     <div id="login-overlay">
         <div class="login-card">
             <h2>Acceso al Sistema</h2>
@@ -97,7 +92,6 @@
         </div>
     </div>
 
-    <!-- PÁGINA PRINCIPAL -->
     <div id="app-content">
         <header class="top-navbar">
             <h1>Gestión de Inventario <span class="sync-status" id="sync-status">☁️ Sincronizado</span></h1>
@@ -220,12 +214,10 @@
     </div>
 
     <script>
-        // CONFIGURACIÓN DE CONEXIÓN A JSONBIN CON TU ID EXACTO
         const BIN_ID = '6a7e00fff5f4af5e291231e6'; 
         const MASTER_KEY = '$2a$10$RZtMj57NCeGwO.OxoJHqRO8YPx7e9wIk/9lEZmSfyQbXingxfqamO';
         const API_URL = 'https://api.jsonbin.io/v3/b/' + BIN_ID;
 
-        // Estado inicial
         let datosBase = {
             perfil: { nombre: "Administrador", usuario: "admin", pass: "1234" },
             ganancias: 0,
@@ -244,13 +236,12 @@
             }
         }
 
-        // LEER DATOS DESDE LA NUBE
         async function cargarDesdeNube() {
             indicarEstadoSync("⏳ Cargando...", "#fff3cd", "#856404");
             try {
                 const res = await fetch(API_URL + '/latest', {
                     method: 'GET',
-                    headers: { 
+                    headers: {
                         'X-Master-Key': MASTER_KEY,
                         'X-Bin-Meta': 'false'
                     }
@@ -267,16 +258,14 @@
                     actualizarUIPerfil();
                     renderizarTablaYFinanzas();
                 } else {
-                    console.error('Error HTTP:', res.status);
-                    indicarEstadoSync("⚠️ Error de conexión (" + res.status + ")", "#f8d7da", "#721c24");
+                    indicarEstadoSync("⚠️ Error de conexión", "#f8d7da", "#721c24");
                 }
             } catch (err) {
-                console.error('Error de red:', err);
+                console.error(err);
                 indicarEstadoSync("⚠️ Error de conexión", "#f8d7da", "#721c24");
             }
         }
 
-        // GUARDAR DATOS EN LA NUBE
         async function guardarEnNube() {
             indicarEstadoSync("⏳ Guardando...", "#fff3cd", "#856404");
             try {
@@ -291,16 +280,14 @@
                 if (res.ok) {
                     indicarEstadoSync("☁️ Sincronizado", "#e8f5e9", "#28a745");
                 } else {
-                    console.error('Error al guardar:', res.status);
-                    indicarEstadoSync("⚠️ Error al guardar (" + res.status + ")", "#f8d7da", "#721c24");
+                    indicarEstadoSync("⚠️ Error al guardar", "#f8d7da", "#721c24");
                 }
             } catch (err) {
-                console.error('Error de red:', err);
+                console.error(err);
                 indicarEstadoSync("⚠️ Error de red", "#f8d7da", "#721c24");
             }
         }
 
-        // DIBUJAR INTERFAZ
         function actualizarUIPerfil() {
             document.getElementById('display-user-name').textContent = datosBase.perfil.nombre;
             document.getElementById('dropdown-name').textContent = datosBase.perfil.nombre;
@@ -349,7 +336,6 @@
             document.getElementById('total-inversion').textContent = `$${inversionTotal.toFixed(2)}`;
         }
 
-        // LÓGICA DE FORMULARIOS Y ACCIONES
         document.getElementById('form-producto').addEventListener('submit', function(e) {
             e.preventDefault();
             const nuevo = {
@@ -416,7 +402,6 @@
             }
         }
 
-        // PERFIL
         function toggleProfileDropdown() {
             document.getElementById('profile-dropdown').classList.toggle('active');
         }
@@ -445,7 +430,6 @@
             }
         }
 
-        // ACCESO
         document.getElementById('login-form').addEventListener('submit', function(e) {
             e.preventDefault();
             const u = document.getElementById('login-usuario').value.trim();
