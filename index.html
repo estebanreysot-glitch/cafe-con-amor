@@ -220,9 +220,9 @@
     </div>
 
     <script>
-        // CONFIGURACIÓN DE APIS (ACTUALIZADO CON TU NUEVO BIN ID)
+        // CONFIGURACIÓN DE APIS CON TU NUEVA ACCESS KEY E ID
         const BIN_ID = '6a7e00fff5f4af5e291231e6'; 
-        const SECRET_KEY = '$2a$10$RZtMj57NceGwO.OxoJHqRO8YPx7e9wiK/9lEZmSfyQbXingxfqamO';
+        const ACCESS_KEY = '$2a$10$QVlKSzJQC5r/G3W9IdbcaeG9nTHrw3nJzvwqMXF7.JPk0eaDPlmm';
         const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
         // Estado inicial
@@ -248,7 +248,7 @@
             try {
                 const res = await fetch(`${API_URL}/latest`, {
                     headers: { 
-                        'X-Master-Key': SECRET_KEY 
+                        'X-Access-Key': ACCESS_KEY 
                     }
                 });
                 
@@ -277,7 +277,7 @@
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-Master-Key': SECRET_KEY
+                        'X-Access-Key': ACCESS_KEY
                     },
                     body: JSON.stringify(datosBase)
                 });
