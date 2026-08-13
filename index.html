@@ -220,10 +220,10 @@
     </div>
 
     <script>
-        // CONFIGURACIÓN DE APIS REVISADA CON MASTER KEY Y OBTENCIÓN DIRECTA
+        // CONFIGURACIÓN DE CONEXIÓN A JSONBIN CON TU ID EXACTO
         const BIN_ID = '6a7e00fff5f4af5e291231e6'; 
         const MASTER_KEY = '$2a$10$RZtMj57NCeGwO.OxoJHqRO8YPx7e9wIk/9lEZmSfyQbXingxfqamO';
-        const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+        const API_URL = 'https://api.jsonbin.io/v3/b/' + BIN_ID;
 
         // Estado inicial
         let datosBase = {
@@ -237,16 +237,18 @@
         const syncStatusEl = document.getElementById('sync-status');
 
         function indicarEstadoSync(mensaje, colorFondo, colorTexto) {
-            syncStatusEl.textContent = mensaje;
-            syncStatusEl.style.background = colorFondo;
-            syncStatusEl.style.color = colorTexto;
+            if (syncStatusEl) {
+                syncStatusEl.textContent = mensaje;
+                syncStatusEl.style.background = colorFondo;
+                syncStatusEl.style.color = colorTexto;
+            }
         }
 
         // LEER DATOS DESDE LA NUBE
         async function cargarDesdeNube() {
             indicarEstadoSync("⏳ Cargando...", "#fff3cd", "#856404");
             try {
-                const res = await fetch(`${API_URL}/latest`, {
+                const res = await fetch(API_URL + '/latest', {
                     method: 'GET',
                     headers: { 
                         'X-Master-Key': MASTER_KEY,
@@ -265,11 +267,12 @@
                     actualizarUIPerfil();
                     renderizarTablaYFinanzas();
                 } else {
-                    indicarEstadoSync("⚠️ Error de conexión", "#f8d7da", "#721c24");
+                    console.error('Error HTTP:', res.status);
+                    indicarEstadoSync("⚠️ Error de conexión (" + res.status + ")", "#f8d7da", "#721c24");
                 }
             } catch (err) {
-                console.error(err);
-                indicarEstadoSync("⚠️ Error al cargar", "#f8d7da", "#721c24");
+                console.error('Error de red:', err);
+                indicarEstadoSync("⚠️ Error de conexión", "#f8d7da", "#721c24");
             }
         }
 
@@ -288,10 +291,11 @@
                 if (res.ok) {
                     indicarEstadoSync("☁️ Sincronizado", "#e8f5e9", "#28a745");
                 } else {
-                    indicarEstadoSync("⚠️ Error al guardar", "#f8d7da", "#721c24");
+                    console.error('Error al guardar:', res.status);
+                    indicarEstadoSync("⚠️ Error al guardar (" + res.status + ")", "#f8d7da", "#721c24");
                 }
             } catch (err) {
-                console.error(err);
+                console.error('Error de red:', err);
                 indicarEstadoSync("⚠️ Error de red", "#f8d7da", "#721c24");
             }
         }
